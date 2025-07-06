@@ -41,18 +41,19 @@ Username: @${user.username || 'нет'}
 });
 
 // Эндпоинт для отправки сообщений пользователю
-app.post('/notify-user', async (req, res) => {
-  const { userId, message } = req.body;
-  console.log('Получен запрос на отправку сообщения:', req.body);
+app.get('/log', async (req, res) => {
+  console.log('🌐 GET /log:', req.query);
+
+  const { userId, message } = req.query;
   if (!userId || !message) {
     return res.status(400).send('⛔ Требуются userId и message');
   }
 
   try {
     await bot.telegram.sendMessage(userId, message);
-    res.send('✅ Сообщение отправлено');
+    res.send('✅ Сообщение отправлено (GET)');
   } catch (err) {
-    console.error('Ошибка отправки сообщения:', err);
+    console.error('❌ Ошибка отправки (GET):', err);
     res.status(500).send('❌ Не удалось отправить сообщение');
   }
 });
@@ -65,7 +66,7 @@ process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
 // Запуск сервера
-const PORT = 3000;
+const PORT = 3050;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер слушает на порту ${PORT}`);
 });
