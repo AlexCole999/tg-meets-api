@@ -43,7 +43,7 @@ Username: @${user.username || 'нет'}
 // Эндпоинт для отправки сообщений пользователю
 app.post('/notify-user', async (req, res) => {
   const { userId, message } = req.body;
-
+  console.log('Получен запрос на отправку сообщения:', req.body);
   if (!userId || !message) {
     return res.status(400).send('⛔ Требуются userId и message');
   }
