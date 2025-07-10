@@ -10,7 +10,7 @@ app.use(cors());                   // ⬅️ потом применяем CORS
 app.use(bodyParser.json());
 
 const BOT_TOKEN = '7702489050:AAFDRtksr4mjA0C6_GQVM2qP0NtcuS57qAw';
-const PORT = 3050;
+const PORT = 3000;
 
 let bot;
 
@@ -74,15 +74,6 @@ app.post('/log', async (req, res) => {
   }
 });
 
-// HTTPS
-const sslOptions = {
-  key: fs.readFileSync('./ssl/key.pem'),
-  cert: fs.readFileSync('./ssl/cert.pem'),
-};
-
-https.createServer(sslOptions, app).listen(PORT, () => {
-  console.log(`🚀 HTTPS сервер слушает на порту ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 HTTP сервер слушает на порту ${PORT}`);
 });
-// app.listen(PORT, () => {
-//   console.log(`🚀 HTTP сервер слушает на порту ${PORT}`);
-// });
