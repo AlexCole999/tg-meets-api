@@ -63,6 +63,8 @@ app.post('/auth', async (req, res) => {
   try {
     let user = await User.findOne({ telegramId });
 
+    let status;
+
     if (!user) {
       user = await User.create({
         telegramId,
@@ -73,12 +75,14 @@ app.post('/auth', async (req, res) => {
         city: city || null,
         photos: Array.isArray(photos) ? photos.slice(0, 3) : [],
       });
+      status = 'добавлен';
       console.log('🆕 Новый пользователь:', telegramId);
     } else {
+      status = 'загружен';
       console.log('🔄 Уже есть пользователь:', telegramId);
     }
 
-    res.json(user);
+    res.json({ user, status });
   } catch (err) {
     console.error('❌ /auth ошибка:', err);
     res.status(500).send('❌ Сервер сломался');
