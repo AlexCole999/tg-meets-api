@@ -1,79 +1,107 @@
-const fs = require('fs');
-const https = require('https');
 const express = require('express');
 const bodyParser = require('body-parser');
-const { Telegraf } = require('telegraf');
 const cors = require('cors');
+const mongoose = require('mongoose');
+const { Telegraf } = require('telegraf');
 
-const app = express();              // ⬅️ сначала создаём app
-app.use(cors());                   // ⬅️ потом применяем CORS
+const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 const BOT_TOKEN = '7702489050:AAFDRtksr4mjA0C6_GQVM2qP0NtcuS57qAw';
 const PORT = 3000;
 
-let bot;
+// 📦 Подключение к MongoDB
+mongoose.connect('mongodb://localhost:27017/tg_meets')
+  .then(() => console.log('📦 MongoDB подключена'))
+  .catch(err => console.error('❌ MongoDB ошибка:', err));
 
-try {
-  bot = new Telegraf(BOT_TOKEN);
+// 🧬 Схема пользователя
+const userSchema = new mongoose.Schema({
+  telegramId: { type: String, unique: true },
+  gender: String,
+  age: Number,
+  height: Number,
+  weight: Number,
+  city: String,
+  photos: [String],
+}, { timestamps: true });
 
-  bot.start((ctx) => {
-    const user = ctx.from;
+const User = mongoose.model('User', userSchema);
 
-    ctx.reply('Открой мини-приложение:', {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: 'Открыть TG Meets',
-              web_app: {
-                url: 'https://tg-meets-frontapp.vercel.app/',
-              },
-            },
-          ],
-        ],
-      },
-    });
+// 🤖 Telegraf
+const bot = new Telegraf(BOT_TOKEN);
 
-    ctx.reply(`🧾 Информация о пользователе:
-ID: ${user.id}
-Username: @${user.username || 'нет'}
-Имя: ${user.first_name || 'нет'}
-Фамилия: ${user.last_name || 'нет'}
-Язык: ${user.language_code || 'не указан'}
-`);
-    console.log('📲 /start от:', user);
+bot.start((ctx) => {
+  ctx.reply('Открой мини-приложение:', {
+    reply_markup: {
+      inline_keyboard: [[
+        {
+          text: 'Открыть TG Meets',
+          web_app: { url: 'https://tg-meets-frontapp.vercel.app/' }
+        }
+      ]]
+    }
   });
+});
 
-  bot.launch()
-    .then(() => console.log('✅ Бот запущен'))
-    .catch((err) => console.error('❌ Ошибка запуска бота:', err));
+bot.launch()
+  .then(() => console.log('✅ Бот запущен'))
+  .catch(err => console.error('❌ Бот не запустился:', err));
 
-  process.once('SIGINT', () => bot.stop('SIGINT'));
-  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-} catch (err) {
-  console.error('❌ Ошибка инициализации бота:', err);
-}
+// 🔐 /auth — регистрация или получение пользователя
+app.post('/auth', async (req, res) => {
+  const { telegramId, gender, age, height, weight, city, photos } = req.body;
 
-// POST-запрос на /log
+  if (!telegramId) {
+    return res.status(400).send('⛔ Не передан telegramId');
+  }
+
+  try {
+    let user = await User.findOne({ telegramId });
+
+    if (!user) {
+      user = await User.create({
+        telegramId,
+        gender: gender || null,
+        age: age || null,
+        height: height || null,
+        weight: weight || null,
+        city: city || null,
+        photos: Array.isArray(photos) ? photos.slice(0, 3) : [],
+      });
+      console.log('🆕 Новый пользователь:', telegramId);
+    } else {
+      console.log('🔄 Уже есть пользователь:', telegramId);
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error('❌ /auth ошибка:', err);
+    res.status(500).send('❌ Сервер сломался');
+  }
+});
+
+// 📬 /log — отправка сообщения пользователю
 app.post('/log', async (req, res) => {
-  console.log('📬 POST /log:', req.body);
-
   const { userId, message } = req.body;
   if (!userId || !message) {
-    return res.status(400).send('⛔ Требуются userId и message');
+    return res.status(400).send('⛔ userId и message обязательны');
   }
 
   try {
     await bot.telegram.sendMessage(userId, message);
-    res.send('✅ Сообщение отправлено (POST)');
+    res.send('✅ Сообщение отправлено');
   } catch (err) {
-    console.error('❌ Ошибка отправки (POST):', err);
-    res.status(500).send('❌ Не удалось отправить сообщение');
+    console.error('❌ Ошибка при отправке:', err);
+    res.status(500).send('❌ Не удалось отправить');
   }
 });
 
+// ▶️ Запуск сервера
 app.listen(PORT, () => {
-  console.log(`🚀 HTTP сервер слушает на порту ${PORT}`);
+  console.log(`🚀 Сервер слушает порт ${PORT}`);
 });
