@@ -89,6 +89,43 @@ app.post('/auth', async (req, res) => {
   }
 });
 
+app.post('/profileEdit', async (req, res) => {
+
+  console.log('🔄 Обновление профиля:', req.body);
+  // if (!telegramId) {
+  //   return res.status(400).send('⛔ Не передан telegramId');
+  // }
+
+  try {
+    res.status(200).send('✅ Профиль обновляен');
+    // let user = await User.findOne({ telegramId });
+
+    // let status;
+
+    // if (!user) {
+    //   user = await User.create({
+    //     telegramId,
+    //     gender: gender || null,
+    //     age: age || null,
+    //     height: height || null,
+    //     weight: weight || null,
+    //     city: city || null,
+    //     photos: Array.isArray(photos) ? photos.slice(0, 3) : [],
+    //   });
+    //   status = 'добавлен';
+    //   console.log('🆕 Новый пользователь:', telegramId);
+    // } else {
+    //   status = 'загружен';
+    //   console.log('🔄 Уже есть пользователь:', telegramId);
+    // }
+
+    // res.json({ user, status });
+  } catch (err) {
+    console.error('❌ /auth ошибка:', err);
+    res.status(500).send('❌ Сервер сломался');
+  }
+});
+
 // 📬 /log — отправка сообщения пользователю
 app.post('/log', async (req, res) => {
   const { userId, message } = req.body;
