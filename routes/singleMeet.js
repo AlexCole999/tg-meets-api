@@ -71,7 +71,7 @@ router.post('/single/apply', async (req, res) => {
 
     await bot.telegram.sendMessage(
       meet.creator,
-      `👤 ${name} (${telegramId}) хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
+      `👤 ${name} хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
     );
 
     res.json({ status: '✅ Сообщение отправлено' });

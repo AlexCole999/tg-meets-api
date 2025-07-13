@@ -56,4 +56,20 @@ router.post('/profileEdit', async (req, res) => {
   }
 });
 
+router.post('/single/mine', async (req, res) => {
+  const { telegramId } = req.body;
+
+  if (!telegramId) {
+    return res.json({ error: '⛔ Нужен telegramId' });
+  }
+
+  try {
+    const meetings = await SingleMeet.find({ creator: telegramId }).sort({ time: 1 });
+    res.json({ meetings });
+  } catch (err) {
+    console.error('❌ Ошибка получения встреч:', err);
+    res.json({ error: '❌ Не удалось получить встречи' });
+  }
+});
+
 module.exports = router;
