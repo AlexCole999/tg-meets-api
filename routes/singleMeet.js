@@ -61,7 +61,7 @@ router.post('/single/apply', async (req, res) => {
       return res.json({ error: '⛔ Встреча не найдена' });
     }
 
-    if (meet.creator === telegramId) {
+    if (String(meet.creator) === String(telegramId)) {
       return res.json({ error: '⛔ Нельзя откликнуться на свою встречу' });
     }
 
