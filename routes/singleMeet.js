@@ -65,12 +65,20 @@ router.post('/single/apply', async (req, res) => {
       return res.json({ error: '⛔ Нельзя откликнуться на свою встречу' });
     }
 
-    if (meet.candidates.includes(telegramId)) {
+    const alreadyCandidate = meet.candidates.some(
+      (c) => String(c.telegramId) === String(telegramId)
+    );
+
+    if (alreadyCandidate) {
       return res.json({ error: '⛔ Вы уже откликнулись на эту встречу' });
     }
 
     // Добавляем в кандидаты
-    meet.candidates.push(telegramId);
+    meet.candidates.push({
+      telegramId: String(telegramId),
+      status: 'pending',
+    });
+
     await meet.save();
 
     const user = await User.findOne({ telegramId });
