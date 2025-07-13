@@ -10,10 +10,16 @@ const singleMeetSchema = new mongoose.Schema({
     enum: ['male', 'female', 'any'],
     required: true, // кого ищут
   },
-  candidates: {
-    type: [String], // Массив telegramId, кто подал заявку
-    default: [],
-  },
+  candidates: [
+    {
+      telegramId: String,
+      status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending',
+      },
+    }
+  ],
   acceptedCandidate: {
     type: String, // Telegram ID кого приняли
     default: null,
