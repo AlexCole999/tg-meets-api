@@ -65,6 +65,7 @@ router.post('/single/mine', async (req, res) => {
 
   try {
     const meetings = await SingleMeet.find({ creator: telegramId }).sort({ time: 1 });
+    console.log(meetings)
     res.json({ meetings });
   } catch (err) {
     console.error('❌ Ошибка получения встреч:', err);
