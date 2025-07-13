@@ -15,7 +15,7 @@ router.post('/single/create', async (req, res) => {
   } = req.body;
 
   if (!telegramId || !time || !location) {
-    return res.status(400).send('⛔ Требуются telegramId, time и location');
+    return res.json({ error: '⛔ Требуются telegramId, time и location' });
   }
 
   const existingMeet = await SingleMeet.findOne({
@@ -24,7 +24,7 @@ router.post('/single/create', async (req, res) => {
   });
 
   if (existingMeet) {
-    return res.status(400).send('⛔ У вас уже есть активная встреча');
+    return res.json({ error: '⛔ У вас уже есть активная встреча' });
   }
 
   try {
