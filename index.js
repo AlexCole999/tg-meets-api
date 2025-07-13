@@ -18,9 +18,10 @@ mongoose.connect('mongodb://localhost:27017/tg_meets')
   .then(() => console.log('📦 MongoDB подключена'))
   .catch(err => console.error('❌ MongoDB ошибка:', err));
 
-const User = require('./models/User');
 const userRoutes = require('./routes/user');
+
 app.use(userRoutes);
+
 // 🤖 Telegraf
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -43,71 +44,6 @@ bot.launch()
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-// 🔐 /auth — регистрация или получение пользователя
-// app.post('/auth', async (req, res) => {
-//   const { telegramId, gender, age, height, weight, city, photos } = req.body;
-
-//   if (!telegramId) {
-//     return res.status(400).send('⛔ Не передан telegramId');
-//   }
-
-//   try {
-//     let user = await User.findOne({ telegramId });
-
-//     let status;
-
-//     if (!user) {
-//       user = await User.create({
-//         telegramId,
-//         gender: gender || null,
-//         age: age || null,
-//         height: height || null,
-//         weight: weight || null,
-//         city: city || null,
-//         photos: Array.isArray(photos) ? photos.slice(0, 3) : [],
-//       });
-//       status = 'добавлен';
-//       console.log('🆕 Новый пользователь:', telegramId);
-//     } else {
-//       status = 'загружен';
-//       console.log('🔄 Уже есть пользователь:', telegramId);
-//     }
-
-//     res.json({ user, status });
-//   } catch (err) {
-//     console.error('❌ /auth ошибка:', err);
-//     res.status(500).send('❌ Сервер сломался');
-//   }
-// });
-
-// app.post('/profileEdit', async (req, res) => {
-//   const { telegramId, ...updateFields } = req.body;
-
-//   if (!telegramId) {
-//     return res.status(400).send('⛔ Не передан telegramId');
-//   }
-
-//   try {
-//     const updatedUser = await User.findOneAndUpdate(
-//       { telegramId },
-//       { $set: updateFields },
-//       { new: true }
-//     );
-
-//     if (!updatedUser) {
-//       return res.status(404).send('❌ Пользователь не найден');
-//     }
-
-//     res.json({
-//       status: 'обновлён',
-//       user: updatedUser,
-//     });
-//   } catch (err) {
-//     console.error('❌ /profileEdit ошибка:', err);
-//     res.status(500).send('❌ Ошибка сервера');
-//   }
-// });
 
 // 📬 /log — отправка сообщения пользователю
 app.post('/log', async (req, res) => {
