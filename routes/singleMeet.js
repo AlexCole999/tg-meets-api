@@ -18,6 +18,15 @@ router.post('/single/create', async (req, res) => {
     return res.status(400).send('⛔ Требуются telegramId, time и location');
   }
 
+  const existingMeet = await SingleMeet.findOne({
+    creator: telegramId,
+    status: 'open',
+  });
+
+  if (existingMeet) {
+    return res.status(400).send('⛔ У вас уже есть активная встреча');
+  }
+
   try {
     const meet = await SingleMeet.create({
       creator: telegramId,
