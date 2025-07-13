@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const SingleMeet = require('../models/SingleMeet');
+const bot = require('../bot'); // 👈 твой telegraf-бот, импортируй как надо
 
 router.post('/single/create', async (req, res) => {
   const {
@@ -43,6 +44,31 @@ router.post('/single/create', async (req, res) => {
   } catch (err) {
     console.error('❌ Ошибка при создании встречи:', err);
     res.status(500).send('❌ Ошибка сервера');
+  }
+});
+
+router.post('/single/apply', async (req, res) => {
+  const { meetingId, telegramId } = req.body;
+
+  if (!meetingId || !telegramId) {
+    return res.json({ error: '⛔ Нужны meetingId и telegramId' });
+  }
+
+  try {
+    const meet = await SingleMeet.findById(meetingId);
+    if (!meet) {
+      return res.json({ error: '⛔ Встреча не найдена' });
+    }
+
+    await bot.telegram.sendMessage(
+      meet.creator,
+      `👤 Пользователь ${telegramId} хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
+    );
+
+    res.json({ status: '✅ Сообщение отправлено' });
+  } catch (err) {
+    console.error('❌ Ошибка отправки сообщения:', err);
+    res.json({ error: '❌ Не удалось отправить сообщение' });
   }
 });
 
