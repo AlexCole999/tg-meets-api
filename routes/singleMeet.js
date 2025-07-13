@@ -65,16 +65,23 @@ router.post('/single/apply', async (req, res) => {
       return res.json({ error: '⛔ Нельзя откликнуться на свою встречу' });
     }
 
+    if (meet.candidates.includes(telegramId)) {
+      return res.json({ error: '⛔ Вы уже откликнулись на эту встречу' });
+    }
+
+    // Добавляем в кандидаты
+    meet.candidates.push(telegramId);
+    await meet.save();
+
     const user = await User.findOne({ telegramId });
-    console.log(meet.creator, telegramId, user)
-    const name = user?.name || 'Неизвестный пользователь';
+    const name = user?.name || 'Без имени';
 
     await bot.telegram.sendMessage(
       meet.creator,
-      `👤 ${name} хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
+      `👤 ${name} (${telegramId}) хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
     );
 
-    res.json({ status: '✅ Сообщение отправлено' });
+    res.json({ status: '✅ Заявка отправлена' });
   } catch (err) {
     console.error('❌ Ошибка отправки сообщения:', err);
     res.json({ error: '❌ Не удалось отправить сообщение' });
