@@ -18,7 +18,9 @@ mongoose.connect('mongodb://localhost:27017/tg_meets')
 const userRoutes = require('./routes/user');
 const utilsRoutes = require('./routes/utils');
 const singleMeetRoutes = require('./routes/singleMeet');
+const manyMeetRoutes = require('./routes/manyMeet');
 
+app.use(manyMeetRoutes);
 app.use(userRoutes);
 app.use(utilsRoutes);
 app.use(singleMeetRoutes);
