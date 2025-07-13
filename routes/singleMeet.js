@@ -60,9 +60,16 @@ router.post('/single/apply', async (req, res) => {
       return res.json({ error: '⛔ Встреча не найдена' });
     }
 
+    if (meet.creator === telegramId) {
+      return res.json({ error: '⛔ Нельзя откликнуться на свою встречу' });
+    }
+
+    const user = await User.findOne({ telegramId });
+    const name = user?.name || 'Неизвестный пользователь';
+
     await bot.telegram.sendMessage(
       meet.creator,
-      `👤 Пользователь ${telegramId} хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
+      `👤 ${name} (${telegramId}) хочет участвовать во встрече\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
     );
 
     res.json({ status: '✅ Сообщение отправлено' });
