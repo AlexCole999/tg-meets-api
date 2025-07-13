@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const { Telegraf } = require('telegraf');
 
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -16,18 +17,19 @@ mongoose.connect('mongodb://localhost:27017/tg_meets')
   .then(() => console.log('📦 MongoDB подключена'))
   .catch(err => console.error('❌ MongoDB ошибка:', err));
 
+const User = require('./models/User');
 // 🧬 Схема пользователя
-const userSchema = new mongoose.Schema({
-  telegramId: { type: String, unique: true },
-  gender: String,
-  age: Number,
-  height: Number,
-  weight: Number,
-  city: String,
-  photos: [String],
-}, { timestamps: true });
+// const userSchema = new mongoose.Schema({
+//   telegramId: { type: String, unique: true },
+//   gender: String,
+//   age: Number,
+//   height: Number,
+//   weight: Number,
+//   city: String,
+//   photos: [String],
+// }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
+// const User = mongoose.model('User', userSchema);
 
 // 🤖 Telegraf
 const bot = new Telegraf(BOT_TOKEN);
