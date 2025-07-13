@@ -74,4 +74,19 @@ router.post('/single/mine', async (req, res) => {
   }
 });
 
+router.post('/single/delete', async (req, res) => {
+  const { meetingId } = req.body;
+
+  if (!meetingId) return res.json({ error: '⛔ Не указан meetingId' });
+
+  try {
+    await SingleMeet.findByIdAndDelete(meetingId);
+    res.json({ status: '✅ Удалено' });
+  } catch (err) {
+    console.error('Ошибка удаления встречи:', err);
+    res.json({ error: '❌ Ошибка при удалении' });
+  }
+});
+
+
 module.exports = router;
