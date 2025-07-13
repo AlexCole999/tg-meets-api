@@ -66,6 +66,7 @@ router.post('/single/apply', async (req, res) => {
     }
 
     const user = await User.findOne({ telegramId });
+    console.log('🔍 Найден пользователь:', user)
     const name = user?.name || 'Неизвестный пользователь';
 
     await bot.telegram.sendMessage(
