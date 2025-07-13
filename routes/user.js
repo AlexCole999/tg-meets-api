@@ -57,20 +57,59 @@ router.post('/profileEdit', async (req, res) => {
   }
 });
 
+// router.post('/single/mine', async (req, res) => {
+//   const { telegramId } = req.body;
+
+//   if (!telegramId) {
+//     return res.json({ error: '⛔ Нужен telegramId' });
+//   }
+
+//   try {
+//     const meetings = await SingleMeet.find({ creator: telegramId }).sort({ time: 1 });
+//     console.log(meetings)
+//     res.json({ meetings });
+//   } catch (err) {
+//     console.error('❌ Ошибка получения встреч:', err);
+//     res.json({ error: '❌ Не удалось получить встречи' });
+//   }
+// });
+
 router.post('/single/mine', async (req, res) => {
   const { telegramId } = req.body;
 
-  if (!telegramId) {
-    return res.json({ error: '⛔ Нужен telegramId' });
-  }
-
   try {
-    const meetings = await SingleMeet.find({ creator: telegramId }).sort({ time: 1 });
-    console.log(meetings)
-    res.json({ meetings });
+    const meets = await SingleMeet.find({ creator: telegramId });
+
+    // Сбор всех telegramId (кроме отклонённых)
+    const allCandidateIds = meets.flatMap(m =>
+      m.candidates
+        .filter(c => c.status !== 'rejected') // ❗️ вот фильтрация
+        .map(c => c.telegramId)
+    );
+
+    const uniqueIds = [...new Set(allCandidateIds)];
+    const users = await User.find({ telegramId: { $in: uniqueIds } });
+
+    const userMap = Object.fromEntries(users.map(u => [u.telegramId, u.toObject()]));
+
+    const result = meets.map(m => {
+      const visibleCandidates = m.candidates
+        .filter(c => c.status !== 'rejected') // 🔁 фильтруем тут тоже
+        .map(c => ({
+          ...c.toObject(),
+          ...userMap[c.telegramId], // может быть undefined — это ок
+        }));
+
+      return {
+        ...m.toObject(),
+        candidateProfiles: visibleCandidates,
+      };
+    });
+
+    res.json({ meetings: result });
   } catch (err) {
     console.error('❌ Ошибка получения встреч:', err);
-    res.json({ error: '❌ Не удалось получить встречи' });
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
