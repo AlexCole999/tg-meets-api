@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const SingleMeet = require('../models/SingleMeet');
+const bot = require('../bot'); // 👈 твой telegraf-бот, импортируй как надо
 
 // 🔐 /auth — регистрация или получение пользователя
 router.post('/auth', async (req, res) => {
