@@ -90,39 +90,30 @@ app.post('/auth', async (req, res) => {
 });
 
 app.post('/profileEdit', async (req, res) => {
+  const { telegramId, ...updateFields } = req.body;
 
-  console.log('🔄 Обновление профиля:', req.body);
-  // if (!telegramId) {
-  //   return res.status(400).send('⛔ Не передан telegramId');
-  // }
+  if (!telegramId) {
+    return res.status(400).send('⛔ Не передан telegramId');
+  }
 
   try {
-    res.status(200).send('✅ Профиль обновляен');
-    // let user = await User.findOne({ telegramId });
+    const updatedUser = await User.findOneAndUpdate(
+      { telegramId },
+      { $set: updateFields },
+      { new: true }
+    );
 
-    // let status;
+    if (!updatedUser) {
+      return res.status(404).send('❌ Пользователь не найден');
+    }
 
-    // if (!user) {
-    //   user = await User.create({
-    //     telegramId,
-    //     gender: gender || null,
-    //     age: age || null,
-    //     height: height || null,
-    //     weight: weight || null,
-    //     city: city || null,
-    //     photos: Array.isArray(photos) ? photos.slice(0, 3) : [],
-    //   });
-    //   status = 'добавлен';
-    //   console.log('🆕 Новый пользователь:', telegramId);
-    // } else {
-    //   status = 'загружен';
-    //   console.log('🔄 Уже есть пользователь:', telegramId);
-    // }
-
-    // res.json({ user, status });
+    res.json({
+      status: 'обновлён',
+      user: updatedUser,
+    });
   } catch (err) {
-    console.error('❌ /auth ошибка:', err);
-    res.status(500).send('❌ Сервер сломался');
+    console.error('❌ /profileEdit ошибка:', err);
+    res.status(500).send('❌ Ошибка сервера');
   }
 });
 
