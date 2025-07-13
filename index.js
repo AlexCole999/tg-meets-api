@@ -17,9 +17,11 @@ mongoose.connect('mongodb://localhost:27017/tg_meets')
 
 const userRoutes = require('./routes/user');
 const utilsRoutes = require('./routes/utils');
+const singleMeetRoutes = require('./routes/singleMeet');
 
 app.use(userRoutes);
 app.use(utilsRoutes);
+app.use(singleMeetRoutes);
 
 // ▶️ Запуск сервера
 app.listen(PORT, () => {
