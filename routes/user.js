@@ -113,6 +113,46 @@ router.post('/single/mine', async (req, res) => {
   }
 });
 
+router.post('/single/accept', async (req, res) => {
+  const { meetId, telegramId } = req.body;
+
+  try {
+    const meet = await SingleMeet.findById(meetId);
+    if (!meet) return res.json({ error: '⛔ Встреча не найдена' });
+
+    // Просто отправляем сообщение
+    await bot.telegram.sendMessage(
+      telegramId,
+      `✅ Ваша заявка на встречу\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}\nпринята.`
+    );
+
+    res.json({ status: '✅ Принят' });
+  } catch (e) {
+    console.error('❌ Ошибка при принятии:', e);
+    res.json({ error: '❌ Не удалось отправить сообщение' });
+  }
+});
+
+router.post('/single/reject', async (req, res) => {
+  const { meetId, telegramId } = req.body;
+
+  try {
+    const meet = await SingleMeet.findById(meetId);
+    if (!meet) return res.json({ error: '⛔ Встреча не найдена' });
+
+    // Просто отправляем сообщение
+    await bot.telegram.sendMessage(
+      telegramId,
+      `❌ Ваша заявка на встречу\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}\nбыла отклонена.`
+    );
+
+    res.json({ status: '✅ Отклонён' });
+  } catch (e) {
+    console.error('❌ Ошибка при отклонении:', e);
+    res.json({ error: '❌ Не удалось отправить сообщение' });
+  }
+});
+
 router.post('/single/delete', async (req, res) => {
   const { meetingId } = req.body;
 
