@@ -98,28 +98,39 @@ router.post('/single/apply', async (req, res) => {
 
 // router.get('/single/all', async (req, res) => {
 //   try {
-//     const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
+//     const { gender, minAge, maxAge } = req.query;
 
-//     // соберём все creatorId
+//     const query = { status: 'open' };
+
+//     // фильтр по полу
+//     if (gender && gender !== 'any') {
+//       query.gender = { $in: [gender, 'any'] };
+//     }
+
+//     // фильтр по возрасту: пересечение диапазонов
+//     if (minAge) {
+//       query.maxAge = { $gte: Number(minAge) };
+//     }
+//     if (maxAge) {
+//       query.minAge = { $lte: Number(maxAge) };
+//     }
+
+//     console.log('📥 Фильтр:', query);
+
+//     const meets = await SingleMeet.find(query).sort({ time: 1 });
+
 //     const creatorIds = meets.map(m => m.creator);
-//     const uniqueCreatorIds = [...new Set(creatorIds)];
-
-//     // получаем профили создателей
-//     const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
+//     const creators = await User.find({ telegramId: { $in: creatorIds } });
 //     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
 
-//     // добавляем creatorProfile в каждый объект встречи
-//     const result = meets.map(m => {
-//       const meetObj = m.toObject();
-//       return {
-//         ...meetObj,
-//         creatorProfile: creatorMap[meetObj.creator] || null,
-//       };
-//     });
+//     const result = meets.map(m => ({
+//       ...m.toObject(),
+//       creatorProfile: creatorMap[m.creator] || null,
+//     }));
 
 //     res.json(result);
 //   } catch (err) {
-//     console.error('❌ Ошибка получения встреч:', err);
+//     console.error('❌ Ошибка поиска встреч:', err);
 //     res.status(500).json({ error: '❌ Ошибка сервера' });
 //   }
 // });
@@ -130,23 +141,47 @@ router.get('/single/all', async (req, res) => {
 
     const query = { status: 'open' };
 
-    // фильтр по полу
+    // ✅ фильтр по полу
     if (gender && gender !== 'any') {
       query.gender = { $in: [gender, 'any'] };
     }
 
-    // фильтр по возрасту: пересечение диапазонов
+    // ✅ фильтр по возрасту
+    // если передан только minAge – ищем встречи, где верхняя граница >= minAge или границы нет
     if (minAge) {
-      query.maxAge = { $gte: Number(minAge) };
-    }
-    if (maxAge) {
-      query.minAge = { $lte: Number(maxAge) };
+      query.$or = [
+        { maxAge: null },
+        { maxAge: { $gte: Number(minAge) } }
+      ];
     }
 
-    console.log('📥 Фильтр:', query);
+    // если передан только maxAge – ищем встречи, где нижняя граница <= maxAge или границы нет
+    if (maxAge) {
+      // если уже есть $or от minAge – надо совместить через $and
+      if (query.$or) {
+        query.$and = [
+          { $or: query.$or },
+          {
+            $or: [
+              { minAge: null },
+              { minAge: { $lte: Number(maxAge) } }
+            ]
+          }
+        ];
+        delete query.$or; // убираем $or на верхнем уровне
+      } else {
+        query.$or = [
+          { minAge: null },
+          { minAge: { $lte: Number(maxAge) } }
+        ];
+      }
+    }
+
+    console.log('📥 Итоговый фильтр:', JSON.stringify(query, null, 2));
 
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
+    // 👤 подгружаем профили создателей
     const creatorIds = meets.map(m => m.creator);
     const creators = await User.find({ telegramId: { $in: creatorIds } });
     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
@@ -162,8 +197,6 @@ router.get('/single/all', async (req, res) => {
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
-
-
 
 
 
