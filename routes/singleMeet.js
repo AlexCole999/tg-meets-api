@@ -127,44 +127,26 @@ router.post('/single/apply', async (req, res) => {
 router.get('/single/all', async (req, res) => {
   try {
     const { gender, minAge, maxAge } = req.query;
+
     const query = { status: 'open' };
 
-    // 🎯 Пол: если передан male/female — ищем совпадение или any
+    // фильтр по полу
     if (gender && gender !== 'any') {
       query.gender = { $in: [gender, 'any'] };
     }
 
-    // 🎯 Возраст
-    const ageConditions = [];
-
+    // фильтр по возрасту: пересечение диапазонов
     if (minAge) {
-      ageConditions.push({
-        $or: [
-          { maxAge: null },
-          { maxAge: { $gte: Number(minAge) } }
-        ]
-      });
+      query.maxAge = { $gte: Number(minAge) };
     }
-
     if (maxAge) {
-      ageConditions.push({
-        $or: [
-          { minAge: null },
-          { minAge: { $lte: Number(maxAge) } }
-        ]
-      });
+      query.minAge = { $lte: Number(maxAge) };
     }
 
-    if (ageConditions.length > 0) {
-      query.$and = ageConditions;
-    }
+    console.log('📥 Фильтр:', query);
 
-    console.log('📥 Фильтр:', JSON.stringify(query, null, 2));
-
-    // 🔎 Ищем встречи
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
-    // 👤 Подгружаем профили создателей
     const creatorIds = meets.map(m => m.creator);
     const creators = await User.find({ telegramId: { $in: creatorIds } });
     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
