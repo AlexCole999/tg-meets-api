@@ -5,8 +5,8 @@ const userSchema = new mongoose.Schema({
   name: String,
   gender: {
     type: String,
-    enum: ['male', 'female'], // 👈 только эти два значения допустимы
-    default: null, // 👈 по умолчанию не задано
+    enum: ['male', 'female', null, undefined], // 👈 только эти два значения допустимы
+    default: undefined, // 👈 по умолчанию не задано
   },
   age: Number,
   height: Number,
