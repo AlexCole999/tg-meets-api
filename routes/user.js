@@ -165,20 +165,45 @@ router.post('/single/accept', async (req, res) => {
 router.post('/single/reject', async (req, res) => {
   const { meetId, telegramId } = req.body;
 
+  if (!meetId || !telegramId) {
+    return res.status(400).json({ error: '⛔ Нужны meetId и telegramId' });
+  }
+
   try {
     const meet = await SingleMeet.findById(meetId);
-    if (!meet) return res.json({ error: '⛔ Встреча не найдена' });
+    if (!meet) {
+      return res.json({ error: '⛔ Встреча не найдена' });
+    }
 
-    // Просто отправляем сообщение
-    await bot.telegram.sendMessage(
-      telegramId,
-      `❌ Ваша заявка на встречу\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}\nбыла отклонена.`
+    // если встреча уже закрыта/отменена
+    if (meet.status !== 'open') {
+      return res.json({ error: '⛔ Встреча уже закрыта или отменена' });
+    }
+
+    // обновляем статус только для одного кандидата
+    meet.candidates = meet.candidates.map(c =>
+      c.telegramId === String(telegramId)
+        ? { ...c.toObject(), status: 'rejected' }
+        : c.toObject()
     );
 
+    await meet.save();
+
+    // уведомляем отклонённого
+    try {
+      await bot.telegram.sendMessage(
+        telegramId,
+        `❌ Ваша заявка на встречу\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}\nбыла отклонена.`
+      );
+    } catch (err) {
+      console.error('⚠️ Ошибка отправки уведомления отклонённому:', err.message);
+      // даже если сообщение не ушло, данные в базе уже обновлены
+    }
+
     res.json({ status: '✅ Отклонён' });
-  } catch (e) {
-    console.error('❌ Ошибка при отклонении:', e);
-    res.json({ error: '❌ Не удалось отправить сообщение' });
+  } catch (err) {
+    console.error('❌ Ошибка при отклонении кандидата:', err);
+    res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
 
