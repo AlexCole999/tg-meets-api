@@ -127,21 +127,21 @@ router.post('/single/apply', async (req, res) => {
 router.get('/single/all', async (req, res) => {
   try {
     const { gender, minAge, maxAge } = req.query;
-    let query = { status: 'open' };
+    const query = { status: 'open' };
 
-    // 🔹 Фильтр по полу
+    // 🎯 Пол: если передан male/female — ищем совпадение или any
     if (gender && gender !== 'any') {
       query.gender = { $in: [gender, 'any'] };
     }
 
-    // 🔹 Фильтр по возрасту — логика пересечения диапазонов
+    // 🎯 Возраст
     const ageConditions = [];
 
     if (minAge) {
       ageConditions.push({
         $or: [
-          { maxAge: null }, // если не ограничен
-          { maxAge: { $gte: Number(minAge) } } // верхняя граница встречи >= нижней границы фильтра
+          { maxAge: null },
+          { maxAge: { $gte: Number(minAge) } }
         ]
       });
     }
@@ -149,8 +149,8 @@ router.get('/single/all', async (req, res) => {
     if (maxAge) {
       ageConditions.push({
         $or: [
-          { minAge: null }, // если не ограничен
-          { minAge: { $lte: Number(maxAge) } } // нижняя граница встречи <= верхней границы фильтра
+          { minAge: null },
+          { minAge: { $lte: Number(maxAge) } }
         ]
       });
     }
@@ -159,11 +159,12 @@ router.get('/single/all', async (req, res) => {
       query.$and = ageConditions;
     }
 
-    console.log('📥 Фильтры для поиска встреч:', JSON.stringify(query, null, 2));
+    console.log('📥 Фильтр:', JSON.stringify(query, null, 2));
 
+    // 🔎 Ищем встречи
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
-    // ⚡ Получаем профили создателей
+    // 👤 Подгружаем профили создателей
     const creatorIds = meets.map(m => m.creator);
     const creators = await User.find({ telegramId: { $in: creatorIds } });
     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
@@ -179,6 +180,7 @@ router.get('/single/all', async (req, res) => {
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
+
 
 
 
