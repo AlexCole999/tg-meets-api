@@ -99,57 +99,50 @@ router.post('/single/apply', async (req, res) => {
 // router.get('/single/all', async (req, res) => {
 //   try {
 //     const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
-//     res.json(meets);
+
+//     // соберём все creatorId
+//     const creatorIds = meets.map(m => m.creator);
+//     const uniqueCreatorIds = [...new Set(creatorIds)];
+
+//     // получаем профили создателей
+//     const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
+//     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
+
+//     // добавляем creatorProfile в каждый объект встречи
+//     const result = meets.map(m => {
+//       const meetObj = m.toObject();
+//       return {
+//         ...meetObj,
+//         creatorProfile: creatorMap[meetObj.creator] || null,
+//       };
+//     });
+
+//     res.json(result);
 //   } catch (err) {
 //     console.error('❌ Ошибка получения встреч:', err);
-//     res.status(500).send('❌ Ошибка сервера');
+//     res.status(500).json({ error: '❌ Ошибка сервера' });
 //   }
 // });
 
 router.get('/single/all', async (req, res) => {
   try {
-    const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
+    const { gender, minAge, maxAge } = req.query; // из query получаем фильтры
+    const query = {};
 
-    // соберём все creatorId
-    const creatorIds = meets.map(m => m.creator);
-    const uniqueCreatorIds = [...new Set(creatorIds)];
+    if (gender && gender !== 'any') {
+      query.gender = gender;
+    }
 
-    // получаем профили создателей
-    const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
-    const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
+    if (minAge) {
+      query.minAge = { $gte: Number(minAge) };
+    }
 
-    // добавляем creatorProfile в каждый объект встречи
-    const result = meets.map(m => {
-      const meetObj = m.toObject();
-      return {
-        ...meetObj,
-        creatorProfile: creatorMap[meetObj.creator] || null,
-      };
-    });
+    if (maxAge) {
+      query.maxAge = { ...(query.maxAge || {}), $lte: Number(maxAge) };
+    }
 
-    res.json(result);
-  } catch (err) {
-    console.error('❌ Ошибка получения встреч:', err);
-    res.status(500).json({ error: '❌ Ошибка сервера' });
-  }
-});
-
-router.post('/single/allFiltered', async (req, res) => {
-  const { gender, minAge, maxAge } = req.body;
-  let query = {};
-
-  if (gender && gender !== 'any') {
-    query.gender = gender;
-  }
-  if (minAge) {
-    query.minAge = { $gte: Number(minAge) };
-  }
-  if (maxAge) {
-    query.maxAge = { ...query.maxAge, $lte: Number(maxAge) };
-  }
-
-  try {
-    const meets = await SingleMeet.find(query).lean();
+    // сортируем по времени (предположим поле time)
+    const meets = await SingleMeet.find(query).sort({ time: 1 }).lean();
     res.json(meets);
   } catch (err) {
     console.error('❌ Ошибка поиска встреч:', err);
