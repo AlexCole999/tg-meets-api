@@ -127,46 +127,43 @@ router.post('/single/apply', async (req, res) => {
 router.get('/single/all', async (req, res) => {
   try {
     const { gender, minAge, maxAge } = req.query;
-
     let query = { status: 'open' };
 
-    // 📌 Логика по полу:
+    // 🔹 Фильтр по полу
     if (gender && gender !== 'any') {
-      // выбираем встречи где гендер совпадает ИЛИ где создатель ищет "any"
       query.gender = { $in: [gender, 'any'] };
     }
-    // если gender пустой или "any" — не фильтруем
 
-    // 📌 Логика по возрасту
-    const andConditions = [];
+    // 🔹 Фильтр по возрасту — логика пересечения диапазонов
+    const ageConditions = [];
 
     if (minAge) {
-      andConditions.push({
+      ageConditions.push({
         $or: [
-          { minAge: null },
-          { minAge: { $gte: Number(minAge) } }
+          { maxAge: null }, // если не ограничен
+          { maxAge: { $gte: Number(minAge) } } // верхняя граница встречи >= нижней границы фильтра
         ]
       });
     }
 
     if (maxAge) {
-      andConditions.push({
+      ageConditions.push({
         $or: [
-          { maxAge: null },
-          { maxAge: { $lte: Number(maxAge) } }
+          { minAge: null }, // если не ограничен
+          { minAge: { $lte: Number(maxAge) } } // нижняя граница встречи <= верхней границы фильтра
         ]
       });
     }
 
-    if (andConditions.length > 0) {
-      query.$and = andConditions;
+    if (ageConditions.length > 0) {
+      query.$and = ageConditions;
     }
 
     console.log('📥 Фильтры для поиска встреч:', JSON.stringify(query, null, 2));
 
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
-    // Получаем профили создателей
+    // ⚡ Получаем профили создателей
     const creatorIds = meets.map(m => m.creator);
     const creators = await User.find({ telegramId: { $in: creatorIds } });
     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
@@ -182,6 +179,7 @@ router.get('/single/all', async (req, res) => {
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
+
 
 
 
