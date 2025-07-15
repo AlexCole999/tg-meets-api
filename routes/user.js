@@ -61,22 +61,20 @@ router.post('/auth', async (req, res) => {
 router.post('/profileEdit', async (req, res) => {
   const { telegramId, photos, ...otherFields } = req.body;
 
-  if (!telegramId) return res.status(400).send('⛔ Не передан telegramId');
+  if (!telegramId) return res.json({ error: '⛔ Не передан telegramId' });
 
   try {
     const updateFields = { ...otherFields };
 
-    // 🔥 Проверяем фотки
     if (photos !== undefined) {
       if (!Array.isArray(photos)) {
-        return res.status(400).json({ error: '❌ photos должно быть массивом' });
+        return res.json({ error: '❌ photos должно быть массивом' });
       }
 
-      // убираем пустые значения
       const filteredPhotos = photos.filter((p) => !!p);
 
       if (filteredPhotos.length > 3) {
-        return res.status(400).json({ error: '❌ Можно добавить не более 3 фото' });
+        return res.json({ error: '❌ Можно добавить не более 3 фото' });
       }
 
       updateFields.photos = filteredPhotos;
@@ -88,12 +86,12 @@ router.post('/profileEdit', async (req, res) => {
       { new: true }
     );
 
-    if (!updatedUser) return res.status(404).send('❌ Пользователь не найден');
+    if (!updatedUser) return res.json({ error: '❌ Пользователь не найден' });
 
-    res.json({ status: 'обновлён', user: updatedUser });
+    res.json({ status: '✅ Профиль обновлён', user: updatedUser });
   } catch (err) {
     console.error('❌ /profileEdit ошибка:', err);
-    res.status(500).send('❌ Ошибка сервера');
+    res.json({ error: '❌ Ошибка сервера' });
   }
 });
 
