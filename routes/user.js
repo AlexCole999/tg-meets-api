@@ -75,7 +75,7 @@ router.post('/profileEdit', async (req, res) => {
 //   }
 // });
 
-router.post('/single/mine', async (req, res) => {
+router.post('/single/myCreatedMeets', async (req, res) => {
   const { telegramId } = req.body;
 
   try {
