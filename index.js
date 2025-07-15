@@ -27,6 +27,9 @@ app.use(utilsRoutes);
 app.use(singleMeetRoutes);
 app.use(uploadRoutes);
 
+// Раздаём папку uploads как статическую
+app.use('/uploads', express.static('uploads'));
+
 // ▶️ Запуск сервера
 app.listen(PORT, () => {
   console.log(`🚀 Сервер слушает порт ${PORT}`);
