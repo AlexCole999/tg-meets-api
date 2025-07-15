@@ -126,53 +126,63 @@ router.post('/single/apply', async (req, res) => {
 
 router.get('/single/all', async (req, res) => {
   try {
-    // 📥 фильтры из query
     const { gender, minAge, maxAge } = req.query;
-    const query = { status: 'open' }; // базовое условие
 
+    // Базовый фильтр
+    let query = { status: 'open' };
+
+    // Фильтр по полу
     if (gender && gender !== 'any') {
       query.gender = gender;
     }
 
-    // ⚡️ фильтрация по возрасту
-    // если в модели встречи есть поля minAge/maxAge (какие ищет создатель),
-    // фильтруем их. Если нужно фильтровать по возрасту участника – логика другая.
+    // Фильтры по возрасту через $and
+    const andConditions = [];
+
     if (minAge) {
-      query.minAge = { $gte: Number(minAge) };
+      andConditions.push({
+        $or: [
+          { minAge: null },
+          { minAge: { $gte: Number(minAge) } }
+        ]
+      });
     }
+
     if (maxAge) {
-      query.maxAge = { ...(query.maxAge || {}), $lte: Number(maxAge) };
+      andConditions.push({
+        $or: [
+          { maxAge: null },
+          { maxAge: { $lte: Number(maxAge) } }
+        ]
+      });
     }
 
-    console.log('📥 Применяем фильтры для встреч:', query);
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
 
-    // ищем встречи
+    console.log('📥 Фильтры для поиска встреч:', JSON.stringify(query, null, 2));
+
+    // Ищем встречи
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
-    // соберём все creatorId
+    // Собираем всех создателей
     const creatorIds = meets.map(m => m.creator);
-    const uniqueCreatorIds = [...new Set(creatorIds)];
+    const creators = await User.find({ telegramId: { $in: creatorIds } });
+    const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
 
-    // получаем профили создателей
-    const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
-    const creatorMap = Object.fromEntries(
-      creators.map(u => [u.telegramId, u.toObject()])
-    );
-
-    // добавляем creatorProfile в каждый объект встречи
-    const result = meets.map(m => {
-      const meetObj = m.toObject();
-      return {
-        ...meetObj,
-        creatorProfile: creatorMap[meetObj.creator] || null,
-      };
-    });
+    // Добавляем creatorProfile
+    const result = meets.map(m => ({
+      ...m.toObject(),
+      creatorProfile: creatorMap[m.creator] || null,
+    }));
 
     res.json(result);
   } catch (err) {
-    console.error('❌ Ошибка получения встреч:', err);
+    console.error('❌ Ошибка поиска встреч:', err);
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
+
 
 module.exports = router;
