@@ -134,4 +134,27 @@ router.get('/single/all', async (req, res) => {
   }
 });
 
+router.post('/single/allFiltered', async (req, res) => {
+  const { gender, minAge, maxAge } = req.body;
+  let query = {};
+
+  if (gender && gender !== 'any') {
+    query.gender = gender;
+  }
+  if (minAge) {
+    query.minAge = { $gte: Number(minAge) };
+  }
+  if (maxAge) {
+    query.maxAge = { ...query.maxAge, $lte: Number(maxAge) };
+  }
+
+  try {
+    const meets = await SingleMeet.find(query).lean();
+    res.json(meets);
+  } catch (err) {
+    console.error('❌ Ошибка поиска встреч:', err);
+    res.json({ error: '❌ Ошибка поиска встреч' });
+  }
+});
+
 module.exports = router;

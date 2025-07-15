@@ -3,7 +3,10 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   telegramId: { type: String, unique: true },
   name: String,
-  gender: String,
+  gender: {
+    type: String,
+    enum: ['male', 'female'], // 👈 только эти два значения допустимы
+  },
   age: Number,
   height: Number,
   weight: Number,
