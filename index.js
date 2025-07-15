@@ -19,11 +19,13 @@ const userRoutes = require('./routes/user');
 const utilsRoutes = require('./routes/utils');
 const singleMeetRoutes = require('./routes/singleMeet');
 const manyMeetRoutes = require('./routes/manyMeet');
+const uploadRoutes = require('./routes/upload');
 
 app.use(manyMeetRoutes);
 app.use(userRoutes);
 app.use(utilsRoutes);
 app.use(singleMeetRoutes);
+app.use(uploadRoutes);
 
 // ▶️ Запуск сервера
 app.listen(PORT, () => {
