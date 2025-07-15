@@ -17,7 +17,6 @@ router.post('/auth', async (req, res) => {
     if (!user) {
       user = await User.create({
         telegramId,
-        gender: gender || '',
         age: age || 0,
         height: height || 0,
         weight: weight || 0,
