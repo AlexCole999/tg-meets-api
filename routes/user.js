@@ -190,6 +190,25 @@ router.post('/single/reject', async (req, res) => {
   }
 });
 
+// router.post('/single/myAcceptedMeets', async (req, res) => {
+//   const { telegramId } = req.body;
+
+//   if (!telegramId) {
+//     return res.status(400).json({ error: '⛔ Нужен telegramId' });
+//   }
+
+//   try {
+//     // Ищем встречи, где этот пользователь принят
+//     const meets = await SingleMeet.find({
+//       acceptedCandidate: telegramId
+//     }).sort({ time: 1 });
+
+//     res.json({ meetings: meets });
+//   } catch (err) {
+//     console.error('❌ Ошибка получения принятых встреч:', err);
+//     res.status(500).json({ error: '❌ Ошибка сервера' });
+//   }
+// });
 router.post('/single/myAcceptedMeets', async (req, res) => {
   const { telegramId } = req.body;
 
@@ -198,18 +217,25 @@ router.post('/single/myAcceptedMeets', async (req, res) => {
   }
 
   try {
-    // Ищем встречи, где этот пользователь принят
-    const meets = await SingleMeet.find({
-      acceptedCandidate: telegramId
-    }).sort({ time: 1 });
+    const meets = await SingleMeet.find({ acceptedCandidate: telegramId }).sort({ time: 1 });
 
-    res.json({ meetings: meets });
+    // собираем все creator id
+    const creatorIds = meets.map(m => m.creator);
+    const creators = await User.find({ telegramId: { $in: creatorIds } });
+    const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
+
+    // добавляем creatorProfile
+    const result = meets.map(m => ({
+      ...m.toObject(),
+      creatorProfile: creatorMap[m.creator] || null
+    }));
+
+    res.json({ meetings: result });
   } catch (err) {
     console.error('❌ Ошибка получения принятых встреч:', err);
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
-
 router.post('/single/delete', async (req, res) => {
   const { meetingId } = req.body;
 
