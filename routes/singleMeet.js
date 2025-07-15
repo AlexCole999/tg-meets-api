@@ -143,8 +143,8 @@ router.get('/single/all', async (req, res) => {
     }
 
     // сортируем по времени (предположим поле time)
-    const meets = await SingleMeet.find(query).sort({ time: 1 }).
-      console.log(meets)
+    const meets = await SingleMeet.find(query).sort({ time: 1 })
+    console.log(meets)
     res.json(meets);
   } catch (err) {
     console.error('❌ Ошибка поиска встреч:', err);
