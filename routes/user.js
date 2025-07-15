@@ -58,23 +58,6 @@ router.post('/profileEdit', async (req, res) => {
   }
 });
 
-// router.post('/single/mine', async (req, res) => {
-//   const { telegramId } = req.body;
-
-//   if (!telegramId) {
-//     return res.json({ error: '⛔ Нужен telegramId' });
-//   }
-
-//   try {
-//     const meetings = await SingleMeet.find({ creator: telegramId }).sort({ time: 1 });
-//     console.log(meetings)
-//     res.json({ meetings });
-//   } catch (err) {
-//     console.error('❌ Ошибка получения встреч:', err);
-//     res.json({ error: '❌ Не удалось получить встречи' });
-//   }
-// });
-
 router.post('/single/myCreatedMeets', async (req, res) => {
   const { telegramId } = req.body;
 
@@ -203,6 +186,26 @@ router.post('/single/reject', async (req, res) => {
     res.json({ status: '✅ Отклонён' });
   } catch (err) {
     console.error('❌ Ошибка при отклонении кандидата:', err);
+    res.status(500).json({ error: '❌ Ошибка сервера' });
+  }
+});
+
+router.post('/single/myAcceptedMeets', async (req, res) => {
+  const { telegramId } = req.body;
+
+  if (!telegramId) {
+    return res.status(400).json({ error: '⛔ Нужен telegramId' });
+  }
+
+  try {
+    // Ищем встречи, где этот пользователь принят
+    const meets = await SingleMeet.find({
+      acceptedCandidate: telegramId
+    }).sort({ time: 1 });
+
+    res.json({ meetings: meets });
+  } catch (err) {
+    console.error('❌ Ошибка получения принятых встреч:', err);
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
