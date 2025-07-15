@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   gender: {
     type: String,
     enum: ['male', 'female'], // 👈 только эти два значения допустимы
+    default: null, // 👈 по умолчанию не задано
   },
   age: Number,
   height: Number,
