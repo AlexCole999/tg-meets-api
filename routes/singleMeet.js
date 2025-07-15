@@ -96,59 +96,31 @@ router.post('/single/apply', async (req, res) => {
   }
 });
 
-// router.get('/single/all', async (req, res) => {
-//   try {
-//     const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
-
-//     // соберём все creatorId
-//     const creatorIds = meets.map(m => m.creator);
-//     const uniqueCreatorIds = [...new Set(creatorIds)];
-
-//     // получаем профили создателей
-//     const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
-//     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
-
-//     // добавляем creatorProfile в каждый объект встречи
-//     const result = meets.map(m => {
-//       const meetObj = m.toObject();
-//       return {
-//         ...meetObj,
-//         creatorProfile: creatorMap[meetObj.creator] || null,
-//       };
-//     });
-
-//     res.json(result);
-//   } catch (err) {
-//     console.error('❌ Ошибка получения встреч:', err);
-//     res.status(500).json({ error: '❌ Ошибка сервера' });
-//   }
-// });
-
 router.get('/single/all', async (req, res) => {
   try {
-    console.log(req.query); // для отладки, чтобы видеть какие фильтры пришли
-    const { gender, minAge, maxAge } = req.query; // из query получаем фильтры
-    const query = {};
+    const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
 
-    if (gender && gender !== 'any') {
-      query.gender = gender;
-    }
+    // соберём все creatorId
+    const creatorIds = meets.map(m => m.creator);
+    const uniqueCreatorIds = [...new Set(creatorIds)];
 
-    if (minAge) {
-      query.minAge = { $gte: Number(minAge) };
-    }
+    // получаем профили создателей
+    const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
+    const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
 
-    if (maxAge) {
-      query.maxAge = { ...(query.maxAge || {}), $lte: Number(maxAge) };
-    }
+    // добавляем creatorProfile в каждый объект встречи
+    const result = meets.map(m => {
+      const meetObj = m.toObject();
+      return {
+        ...meetObj,
+        creatorProfile: creatorMap[meetObj.creator] || null,
+      };
+    });
 
-    // сортируем по времени (предположим поле time)
-    const meets = await SingleMeet.find(query).sort({ time: 1 })
-    console.log(meets)
-    res.json(meets);
+    res.json(result);
   } catch (err) {
-    console.error('❌ Ошибка поиска встреч:', err);
-    res.json({ error: '❌ Ошибка поиска встреч' });
+    console.error('❌ Ошибка получения встреч:', err);
+    res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
 
