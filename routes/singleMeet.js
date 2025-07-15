@@ -128,15 +128,16 @@ router.get('/single/all', async (req, res) => {
   try {
     const { gender, minAge, maxAge } = req.query;
 
-    // Базовый фильтр
     let query = { status: 'open' };
 
-    // Фильтр по полу
+    // 📌 Логика по полу:
     if (gender && gender !== 'any') {
-      query.gender = gender;
+      // выбираем встречи где гендер совпадает ИЛИ где создатель ищет "any"
+      query.gender = { $in: [gender, 'any'] };
     }
+    // если gender пустой или "any" — не фильтруем
 
-    // Фильтры по возрасту через $and
+    // 📌 Логика по возрасту
     const andConditions = [];
 
     if (minAge) {
@@ -163,15 +164,13 @@ router.get('/single/all', async (req, res) => {
 
     console.log('📥 Фильтры для поиска встреч:', JSON.stringify(query, null, 2));
 
-    // Ищем встречи
     const meets = await SingleMeet.find(query).sort({ time: 1 });
 
-    // Собираем всех создателей
+    // Получаем профили создателей
     const creatorIds = meets.map(m => m.creator);
     const creators = await User.find({ telegramId: { $in: creatorIds } });
     const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
 
-    // Добавляем creatorProfile
     const result = meets.map(m => ({
       ...m.toObject(),
       creatorProfile: creatorMap[m.creator] || null,
@@ -183,6 +182,7 @@ router.get('/single/all', async (req, res) => {
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
+
 
 
 module.exports = router;
