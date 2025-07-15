@@ -37,12 +37,51 @@ router.post('/auth', async (req, res) => {
 });
 
 // ✏️ /profileEdit — редактирование профиля
+// router.post('/profileEdit', async (req, res) => {
+//   const { telegramId, ...updateFields } = req.body;
+
+//   if (!telegramId) return res.status(400).send('⛔ Не передан telegramId');
+
+//   try {
+//     const updatedUser = await User.findOneAndUpdate(
+//       { telegramId },
+//       { $set: updateFields },
+//       { new: true }
+//     );
+
+//     if (!updatedUser) return res.status(404).send('❌ Пользователь не найден');
+
+//     res.json({ status: 'обновлён', user: updatedUser });
+//   } catch (err) {
+//     console.error('❌ /profileEdit ошибка:', err);
+//     res.status(500).send('❌ Ошибка сервера');
+//   }
+// });
+
 router.post('/profileEdit', async (req, res) => {
-  const { telegramId, ...updateFields } = req.body;
+  const { telegramId, photos, ...otherFields } = req.body;
 
   if (!telegramId) return res.status(400).send('⛔ Не передан telegramId');
 
   try {
+    const updateFields = { ...otherFields };
+
+    // 🔥 Проверяем фотки
+    if (photos !== undefined) {
+      if (!Array.isArray(photos)) {
+        return res.status(400).json({ error: '❌ photos должно быть массивом' });
+      }
+
+      // убираем пустые значения
+      const filteredPhotos = photos.filter((p) => !!p);
+
+      if (filteredPhotos.length > 3) {
+        return res.status(400).json({ error: '❌ Можно добавить не более 3 фото' });
+      }
+
+      updateFields.photos = filteredPhotos;
+    }
+
     const updatedUser = await User.findOneAndUpdate(
       { telegramId },
       { $set: updateFields },
@@ -190,25 +229,6 @@ router.post('/single/reject', async (req, res) => {
   }
 });
 
-// router.post('/single/myAcceptedMeets', async (req, res) => {
-//   const { telegramId } = req.body;
-
-//   if (!telegramId) {
-//     return res.status(400).json({ error: '⛔ Нужен telegramId' });
-//   }
-
-//   try {
-//     // Ищем встречи, где этот пользователь принят
-//     const meets = await SingleMeet.find({
-//       acceptedCandidate: telegramId
-//     }).sort({ time: 1 });
-
-//     res.json({ meetings: meets });
-//   } catch (err) {
-//     console.error('❌ Ошибка получения принятых встреч:', err);
-//     res.status(500).json({ error: '❌ Ошибка сервера' });
-//   }
-// });
 router.post('/single/myAcceptedMeets', async (req, res) => {
   const { telegramId } = req.body;
 
@@ -236,6 +256,7 @@ router.post('/single/myAcceptedMeets', async (req, res) => {
     res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
+
 router.post('/single/delete', async (req, res) => {
   const { meetingId } = req.body;
 
