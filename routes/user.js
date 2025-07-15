@@ -117,20 +117,48 @@ router.post('/single/mine', async (req, res) => {
 router.post('/single/accept', async (req, res) => {
   const { meetId, telegramId } = req.body;
 
+  if (!meetId || !telegramId) {
+    return res.status(400).json({ error: '⛔ Нужны meetId и telegramId' });
+  }
+
   try {
     const meet = await SingleMeet.findById(meetId);
-    if (!meet) return res.json({ error: '⛔ Встреча не найдена' });
+    if (!meet) {
+      return res.json({ error: '⛔ Встреча не найдена' });
+    }
 
-    // Просто отправляем сообщение
-    await bot.telegram.sendMessage(
-      telegramId,
-      `✅ Ваша заявка на встречу\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}\nпринята.`
-    );
+    // если встреча уже закрыта/отменена
+    if (meet.status !== 'open') {
+      return res.json({ error: '⛔ Встреча уже закрыта или отменена' });
+    }
+
+    // обновляем статусы кандидатов
+    meet.candidates = meet.candidates.map(c => ({
+      ...c.toObject(),
+      status: c.telegramId === String(telegramId) ? 'accepted' : 'rejected'
+    }));
+
+    // ставим принятого кандидата и закрываем встречу
+    meet.acceptedCandidate = telegramId;
+    meet.status = 'closed';
+
+    await meet.save();
+
+    // уведомляем принятого
+    try {
+      await bot.telegram.sendMessage(
+        telegramId,
+        `✅ Вас приняли на встречу!\n📍 ${meet.location}\n📅 ${new Date(meet.time).toLocaleString()}`
+      );
+    } catch (err) {
+      console.error('⚠️ Ошибка отправки уведомления принятому:', err.message);
+      // сообщение не отправилось, но база уже обновлена – это ок
+    }
 
     res.json({ status: '✅ Принят' });
-  } catch (e) {
-    console.error('❌ Ошибка при принятии:', e);
-    res.json({ error: '❌ Не удалось отправить сообщение' });
+  } catch (err) {
+    console.error('❌ Ошибка при принятии кандидата:', err);
+    res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
 
