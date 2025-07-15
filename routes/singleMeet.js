@@ -96,13 +96,41 @@ router.post('/single/apply', async (req, res) => {
   }
 });
 
+// router.get('/single/all', async (req, res) => {
+//   try {
+//     const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
+//     res.json(meets);
+//   } catch (err) {
+//     console.error('❌ Ошибка получения встреч:', err);
+//     res.status(500).send('❌ Ошибка сервера');
+//   }
+// });
+
 router.get('/single/all', async (req, res) => {
   try {
     const meets = await SingleMeet.find({ status: 'open' }).sort({ time: 1 });
-    res.json(meets);
+
+    // соберём все creatorId
+    const creatorIds = meets.map(m => m.creator);
+    const uniqueCreatorIds = [...new Set(creatorIds)];
+
+    // получаем профили создателей
+    const creators = await User.find({ telegramId: { $in: uniqueCreatorIds } });
+    const creatorMap = Object.fromEntries(creators.map(u => [u.telegramId, u.toObject()]));
+
+    // добавляем creatorProfile в каждый объект встречи
+    const result = meets.map(m => {
+      const meetObj = m.toObject();
+      return {
+        ...meetObj,
+        creatorProfile: creatorMap[meetObj.creator] || null,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     console.error('❌ Ошибка получения встреч:', err);
-    res.status(500).send('❌ Ошибка сервера');
+    res.status(500).json({ error: '❌ Ошибка сервера' });
   }
 });
 
