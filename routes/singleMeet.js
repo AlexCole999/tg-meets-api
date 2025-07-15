@@ -157,4 +157,25 @@ router.post('/single/allFiltered', async (req, res) => {
   }
 });
 
+router.post('/single/allFilteredDebug', async (req, res) => {
+  try {
+    const { gender, minAge, maxAge } = req.body;
+
+    console.log('📥 Фильтры получены:');
+    console.log('gender:', gender);
+    console.log('minAge:', minAge);
+    console.log('maxAge:', maxAge);
+
+    // Просто ответ для теста
+    res.json({
+      message: '✅ Фильтры получены',
+      received: { gender, minAge, maxAge },
+      dummyData: [],
+    });
+  } catch (err) {
+    console.error('❌ Ошибка в /single/allFilteredDebug:', err);
+    res.status(500).json({ error: '❌ Ошибка на сервере' });
+  }
+});
+
 module.exports = router;
