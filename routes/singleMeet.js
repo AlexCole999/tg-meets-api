@@ -137,10 +137,10 @@ router.get('/single/all', async (req, res) => {
 
     // фильтр по возрасту: пересечение диапазонов
     if (minAge) {
-      query.maxAge = { $gte: Number(maxAge) };
+      query.maxAge = { $gte: Number(minAge) };
     }
     if (maxAge) {
-      query.minAge = { $lte: Number(minAge) };
+      query.minAge = { $lte: Number(maxAge) };
     }
 
     console.log('📥 Фильтр:', query);
