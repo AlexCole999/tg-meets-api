@@ -126,6 +126,7 @@ router.post('/single/apply', async (req, res) => {
 
 router.get('/single/all', async (req, res) => {
   try {
+    console.log(req.query); // для отладки, чтобы видеть какие фильтры пришли
     const { gender, minAge, maxAge } = req.query; // из query получаем фильтры
     const query = {};
 
